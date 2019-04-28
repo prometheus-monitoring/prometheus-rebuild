@@ -818,12 +818,18 @@ func sendAlerts(s sender, externalURL string) rules.NotifyFunc {
 				StartsAt:     alert.FiredAt,
 				Labels:       alert.Labels,
 				Annotations:  alert.Annotations,
-				GeneratorURL: externalURL + strutil.TableLinkForExpression(expr),
+				GeneratorURL: externalURL + strutil.GraphLinkForExpression(expr),
 			}
 			if !alert.ResolvedAt.IsZero() {
 				a.EndsAt = alert.ResolvedAt
+				timeRange := alert.ResolvedAt.Sub(alert.ActiveAt).Minutes()
+				extraURL := fmt.Sprintf("?g0.range_input=%.fm&g0.end_input=%s&", timeRange, url.QueryEscape(alert.ResolvedAt.UTC().Format("2006-01-02 15:04")))
+				a.GeneratorURL = strings.ReplaceAll(a.GeneratorURL, "?", extraURL)
 			} else {
 				a.EndsAt = alert.ValidUntil
+				timeRange := alert.FiredAt.Sub(alert.ActiveAt).Minutes()
+				extraURL := fmt.Sprintf("?g0.range_input=%.fm&g0.end_input=%s&", timeRange, url.QueryEscape(alert.FiredAt.UTC().Format("2006-01-02 15:04")))
+				a.GeneratorURL = strings.ReplaceAll(a.GeneratorURL, "?", extraURL)
 			}
 			res = append(res, a)
 		}
